@@ -22,9 +22,18 @@ export interface SensorReading {
 
 export type ClogRiskLevel = 'GREEN' | 'AMBER' | 'RED';
 
+export interface PendingFlush {
+  nodeId: string;
+  expiresAt: number; // timestamp in ms
+  signals: string;
+}
+
 export interface AppState {
   nodes: Record<string, SensorReading>;
   clogRisk: Record<string, { level: ClogRiskLevel; score: number }>;
   isOnline: boolean;
   forceAnomaly: boolean;
+  pendingFlushes: Record<string, PendingFlush>;
+  overriddenFlushes: Record<string, boolean>;
+  language: 'EN' | 'HI';
 }

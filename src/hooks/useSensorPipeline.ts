@@ -55,7 +55,7 @@ export function useSensorPipeline() {
     }
 
     // 5. Rule-based Autonomous Flush Engine (Phase 3)
-    // EC rising >0.15 for 3 consecutive cycles
+    let ecRise = false;
     if (win.length >= 4) {
       const recent = win.slice(-4);
       const ecRises = [
@@ -63,15 +63,51 @@ export function useSensorPipeline() {
         recent[2].ec - recent[1].ec,
         recent[3].ec - recent[2].ec
       ];
-      if (ecRises.every(rise => rise > 0.15)) {
-        console.warn(`[Auto-Flush Rule] Consecutive EC rise detected on ${nodeId}!`);
-      }
-      
+      ecRise = ecRises.every(rise => rise > 0.15);
+    }
+    
+    let flowDrop = false;
+    if (win.length >= 2) {
       const flows = win.slice(0, -1).map(r => r.flow_rate);
       const { mean: avgFlow } = getStats(flows);
       if (avgFlow > 0 && ((avgFlow - reading.flow_rate) / avgFlow) > 0.08) {
-        console.warn(`[Auto-Flush Rule] Flow drop >8% detected on ${nodeId}!`);
+        flowDrop = true;
       }
+    }
+
+    let pressureDrop = false;
+    if (win.length >= 2) {
+      const pressures = win.slice(0, -1).map(r => r.pressure);
+      const { mean: avgPressure } = getStats(pressures);
+      const prevReading = win[win.length - 2];
+      const pumpStateChanged = prevReading && (
+        prevReading.pump_status.main !== reading.pump_status.main ||
+        prevReading.pump_status.dose_a !== reading.pump_status.dose_a ||
+        prevReading.pump_status.dose_b !== reading.pump_status.dose_b ||
+        prevReading.pump_status.dose_base !== reading.pump_status.dose_base
+      );
+      if (!pumpStateChanged && avgPressure > 0 && ((avgPressure - reading.pressure) / avgPressure) > 0.10) {
+        pressureDrop = true;
+      }
+    }
+
+    let turbiditySpike = false;
+    if (win.length >= 3) {
+      const recent = win.slice(-3);
+      turbiditySpike = recent.every(r => r.turbidity > 100);
+    }
+
+    const activeSignals = [
+      { name: 'EC Rise', active: ecRise },
+      { name: 'Flow Drop', active: flowDrop },
+      { name: 'Pressure Drop', active: pressureDrop },
+      { name: 'Turbidity Spike', active: turbiditySpike }
+    ];
+    const activeCount = activeSignals.filter(s => s.active).length;
+
+    if (activeCount >= 2) {
+      const signalsTriggered = activeSignals.filter(s => s.active).map(s => s.name).join(', ');
+      dispatch({ type: 'TRIGGER_PENDING_FLUSH', payload: { nodeId, signals: signalsTriggered } });
     }
 
     // Finally, update global state for the Dashboard UI
