@@ -22,6 +22,16 @@ export interface SensorReading {
 
 export type ClogRiskLevel = 'GREEN' | 'AMBER' | 'RED';
 
+export interface HarvestLog {
+  id: string;
+  nodeId: string;
+  timestamp: string; // ISO String
+  cropType: string;
+  yieldKg: number;
+  avgEc: number;
+  notes: string;
+}
+
 export interface PendingFlush {
   nodeId: string;
   expiresAt: number; // timestamp in ms
