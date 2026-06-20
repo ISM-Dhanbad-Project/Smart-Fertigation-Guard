@@ -5,7 +5,10 @@ import { useAppContext } from '@/context/AppContext';
 import { MOCK_NODE_IDS } from '@/hooks/useMockDataGenerator';
 import { Power, Activity, Sliders, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { translations } from '@/services/translations';
-import { cn } from '@/app/page';
+
+function cn(...inputs: (string | undefined | null | false)[]) {
+  return inputs.filter(Boolean).join(' ');
+}
 
 export default function ControlPage() {
   const { state, dispatch } = useAppContext();

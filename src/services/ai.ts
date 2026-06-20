@@ -120,10 +120,11 @@ export async function predictNutrientAction(
   const inputTensor = tf.tensor2d([features]);
   const outputTensor = modelB!.predict(inputTensor) as tf.Tensor;
   const probs = await outputTensor.data();
+  const probsArray = Array.from(probs);
   
-  const actionIdx = probs.indexOf(Math.max(...probs));
+  const actionIdx = probsArray.indexOf(Math.max(...probsArray));
   const actionKey = prepB.actions[actionIdx];
-  const confidence = probs[actionIdx];
+  const confidence = probsArray[actionIdx];
   
   tf.dispose([inputTensor, outputTensor]);
   

@@ -9,7 +9,7 @@ import { HarvestLog } from '@/types';
 import { saveHarvestLog, getAllHarvestLogs } from '@/services/db';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
-export function cn(...inputs: (string | undefined | null | false)[]) {
+function cn(...inputs: (string | undefined | null | false)[]) {
   return inputs.filter(Boolean).join(' ');
 }
 

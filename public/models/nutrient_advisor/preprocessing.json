@@ -1,0 +1,34 @@
+{
+  "crops": [
+    "tomato",
+    "pomegranate",
+    "grape",
+    "chili",
+    "onion",
+    "cotton",
+    "soybean",
+    "wheat"
+  ],
+  "stages": [
+    "seedling",
+    "vegetative",
+    "flowering",
+    "fruiting"
+  ],
+  "actions": [
+    "dilute",
+    "add_fertilizer_a",
+    "add_fertilizer_b",
+    "raise_ph",
+    "no_action"
+  ],
+  "ph_ec_mean": [
+    6.234987735748291,
+    2.2298483848571777
+  ],
+  "ph_ec_std": [
+    0.7948460578918457,
+    1.0624288320541382
+  ],
+  "input_order": "ph, ec, crop_onehot(8), stage_onehot(4)"
+}

@@ -5,7 +5,10 @@ import { useAppContext } from '@/context/AppContext';
 import { MOCK_NODE_IDS } from '@/hooks/useMockDataGenerator';
 import { predictNutrientAction, NutrientRecommendation } from '@/services/ai';
 import { BrainCircuit, Sprout, AlertCircle, Volume2 } from 'lucide-react';
-import { cn } from '@/app/page';
+
+function cn(...inputs: (string | undefined | null | false)[]) {
+  return inputs.filter(Boolean).join(' ');
+}
 
 const CROPS = ['Tomato', 'Capsicum', 'Cucumber'];
 const STAGES = ['Seedling', 'Vegetative', 'Flowering', 'Fruiting'];
@@ -125,7 +128,7 @@ export default function InsightsPage() {
           ) : insight ? (
             <div className="space-y-6">
               <p className="text-2xl leading-relaxed text-neutral-100 font-light relative z-10">
-                "{insight.action}"
+                &quot;{insight.action}&quot;
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
