@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { Noto_Sans, Roboto } from "next/font/google";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const notoSans = Noto_Sans({
+  subsets: ["latin", "devanagari"],
+  weight: ["400", "600", "700"],
+  variable: "--font-noto-sans",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-roboto",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#10b981",
+  themeColor: "#1455D9",
 };
 
 import Providers from "@/components/Providers";
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-neutral-950 text-neutral-50 pb-20`}
+        className={`${notoSans.variable} ${roboto.variable} font-body antialiased bg-base text-ink pb-20`}
       >
         <Providers>
           {children}
