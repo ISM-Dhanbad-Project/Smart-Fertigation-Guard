@@ -5,10 +5,14 @@ import { syncBatchToFirestore } from '@/services/firebase';
 import { SensorReading, ClogRiskLevel } from '@/types';
 import { predictClogRisk } from '@/services/ai';
 
+const AUTO_FLUSH_WINDOW_MS = 30 * 60 * 1000; // 30 minutes wall-clock time
+const POST_FLUSH_VERIFICATION_CYCLES = 5; // ~15 seconds at 3s mock intervals
+
 export function useSensorPipeline() {
   const { state, dispatch } = useAppContext();
   const queueRef = useRef<SensorReading[]>([]);
   const windowRef = useRef<Record<string, SensorReading[]>>({});
+  const verificationRef = useRef<Record<string, { startTs: number, cycles: number }>>({});
   
   const getStats = (arr: number[]) => {
     if (arr.length === 0) return { mean: 0, stdDev: 0 };
@@ -40,7 +44,6 @@ export function useSensorPipeline() {
         if (zScore > 3) {
           console.warn(`[Anomaly Detected] Node: ${nodeId}, EC: ${reading.ec}, Z-Score: ${zScore.toFixed(2)}`);
           isAnomaly = true;
-          // In a real app, we'd flag this as an "event" in the IDB events store
         }
       }
     }
@@ -107,13 +110,31 @@ export function useSensorPipeline() {
 
     if (activeCount >= 2) {
       const signalsTriggered = activeSignals.filter(s => s.active).map(s => s.name).join(', ');
-      dispatch({ type: 'TRIGGER_PENDING_FLUSH', payload: { nodeId, signals: signalsTriggered } });
+      dispatch({ type: 'TRIGGER_PENDING_FLUSH', payload: { nodeId, signals: signalsTriggered, windowMs: AUTO_FLUSH_WINDOW_MS } });
+    }
+
+    // 6. Post-flush verification
+    if (state.lastFlushedTime[nodeId]) {
+      const flushTs = state.lastFlushedTime[nodeId];
+      if (!verificationRef.current[nodeId] || verificationRef.current[nodeId].startTs !== flushTs) {
+        verificationRef.current[nodeId] = { startTs: flushTs, cycles: 0 };
+      }
+      
+      const vRef = verificationRef.current[nodeId];
+      if (vRef.cycles < POST_FLUSH_VERIFICATION_CYCLES) {
+        vRef.cycles += 1;
+        if (vRef.cycles === POST_FLUSH_VERIFICATION_CYCLES) {
+          if (flowDrop) {
+            dispatch({ type: 'HIGH_PRIORITY_ALERT', payload: { nodeId, message: 'CRITICAL: Flow rate did not recover after flush. Manual inspection required.' } });
+          }
+        }
+      }
     }
 
     // Finally, update global state for the Dashboard UI
     dispatch({ type: 'UPDATE_READING', payload: reading });
 
-  }, [dispatch]);
+  }, [dispatch, state.lastFlushedTime]);
 
   // Sync Interval
   useEffect(() => {

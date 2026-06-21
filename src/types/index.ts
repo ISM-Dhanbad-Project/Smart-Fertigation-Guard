@@ -42,7 +42,10 @@ export interface AppState {
   nodes: Record<string, SensorReading>;
   clogRisk: Record<string, { level: ClogRiskLevel; score: number }>;
   isOnline: boolean;
-  forceAnomaly: boolean;
+  forceAnomalyNode: string | null;
+  forceFlushFailure: boolean;
+  alerts: Record<string, string>;
+  lastFlushedTime: Record<string, number>;
   pendingFlushes: Record<string, PendingFlush>;
   overriddenFlushes: Record<string, boolean>;
   language: 'EN' | 'HI';

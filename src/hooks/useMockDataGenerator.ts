@@ -24,7 +24,7 @@ export function useMockDataGenerator(intervalMs = 3000) {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const { forceAnomaly } = stateRef.current;
+      const { forceAnomalyNode } = stateRef.current;
       
       MOCK_NODE_IDS.forEach(node_id => {
         const timestamp = new Date().toISOString();
@@ -37,8 +37,8 @@ export function useMockDataGenerator(intervalMs = 3000) {
         let turbidity = generateNormalDistribution(10, 1);
         let temperature = generateNormalDistribution(25, 0.2);
         
-        if (forceAnomaly) {
-           // Inject outliers probabilistically if anomaly is turned on
+        if (forceAnomalyNode === node_id) {
+           // Inject outliers probabilistically if anomaly is targeted at this node
            if (Math.random() > 0.7) ph += 1.5;
            if (Math.random() > 0.5) ec += 0.8;
            if (Math.random() > 0.4) flow_rate -= 15;

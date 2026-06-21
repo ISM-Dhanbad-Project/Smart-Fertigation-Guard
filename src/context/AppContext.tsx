@@ -9,17 +9,23 @@ type Action =
   | { type: 'TOGGLE_SOLENOID'; payload: { nodeId: string; state: boolean } }
   | { type: 'SET_ONLINE_STATUS'; payload: boolean }
   | { type: 'SET_CLOG_RISK'; payload: { nodeId: string; level: ClogRiskLevel; score: number } }
-  | { type: 'TOGGLE_ANOMALY'; payload: boolean }
-  | { type: 'TRIGGER_PENDING_FLUSH'; payload: { nodeId: string; signals: string } }
+  | { type: 'TOGGLE_ANOMALY'; payload: { nodeId: string | null; forceFailure: boolean } }
+  | { type: 'TRIGGER_PENDING_FLUSH'; payload: { nodeId: string; signals: string; windowMs: number } }
   | { type: 'CANCEL_PENDING_FLUSH'; payload: { nodeId: string } }
   | { type: 'DISMISS_PENDING_FLUSH'; payload: { nodeId: string } }
+  | { type: 'FLUSH_COMPLETED'; payload: { nodeId: string } }
+  | { type: 'HIGH_PRIORITY_ALERT'; payload: { nodeId: string; message: string } }
+  | { type: 'DISMISS_ALERT'; payload: { nodeId: string } }
   | { type: 'SET_LANGUAGE'; payload: 'EN' | 'HI' };
 
 const initialState: AppState = {
   nodes: {},
   clogRisk: {},
   isOnline: true,
-  forceAnomaly: false,
+  forceAnomalyNode: null,
+  forceFlushFailure: false,
+  alerts: {},
+  lastFlushedTime: {},
   pendingFlushes: {},
   overriddenFlushes: {},
   language: 'EN',
@@ -77,9 +83,13 @@ function appReducer(state: AppState, action: Action): AppState {
         },
       };
     case 'TOGGLE_ANOMALY':
-      return { ...state, forceAnomaly: action.payload };
+      return { 
+        ...state, 
+        forceAnomalyNode: action.payload.nodeId, 
+        forceFlushFailure: action.payload.forceFailure 
+      };
     case 'TRIGGER_PENDING_FLUSH': {
-      const { nodeId, signals } = action.payload;
+      const { nodeId, signals, windowMs } = action.payload;
       // If already overridden or already pending, ignore
       if (state.overriddenFlushes[nodeId] || state.pendingFlushes[nodeId]) {
         return state;
@@ -90,7 +100,7 @@ function appReducer(state: AppState, action: Action): AppState {
           ...state.pendingFlushes,
           [nodeId]: {
             nodeId,
-            expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
+            expiresAt: Date.now() + windowMs,
             signals,
           },
         },
@@ -116,6 +126,24 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         pendingFlushes: nextPending,
+      };
+    }
+    case 'FLUSH_COMPLETED':
+      return {
+        ...state,
+        lastFlushedTime: { ...state.lastFlushedTime, [action.payload.nodeId]: Date.now() }
+      };
+    case 'HIGH_PRIORITY_ALERT':
+      return {
+        ...state,
+        alerts: { ...state.alerts, [action.payload.nodeId]: action.payload.message }
+      };
+    case 'DISMISS_ALERT': {
+      const nextAlerts = { ...state.alerts };
+      delete nextAlerts[action.payload.nodeId];
+      return {
+        ...state,
+        alerts: nextAlerts
       };
     }
     case 'SET_LANGUAGE':
